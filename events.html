@@ -1,39 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta-name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pixel Phantoms | Events</title>
-
-    <link rel="stylesheet" href="css/style.css">
-    <link rel="stylesheet" href="css/events.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-</head>
-
-<body>
-    <!-- NAVBAR -->
-    <div id="navbar-placeholder"></div>
-    <script src="js/navbar.js"></script>
-    <script>renderNavbar();</script>
-
-    <!-- HERO -->
-    <section class="hero events-hero">
-        <h1>Campus Events</h1>
-        <p>Workshops, hackathons, meetups, and more — all in one place.</p>
-    </section>
-
-    <!-- EVENTS GRID -->
-    <section class="events-container" id="events-container">
-        <p class="loading-msg">Loading events...</p>
-    </section>
-
-    <!-- FOOTER -->
-    <div id="footer-placeholder"></div>
-    <script src="js/footer.js"></script>
-    <script>renderFooter();</script>
-
-    <script src="js/theme.js"></script>
-    <script src="js/events.js"></script>
-
-</body>
-</html>
+<section class="hero events-hero">
+    <h1>Campus Events</h1>
+    <p>Workshops, hackathons, meetups, and more — all in one place.</p>
+    
+    <div id="countdown-section" class="countdown-hidden">
+        <h3>Next Big Event Starts In:</h3>
+        <div id="countdown-timer">
+            <div class="time-unit">
+                <span id="days">00</span>
+                <label>Days</label>
+            </div>
+            <div class="time-unit">
+                <span id="hours">00</span>
+                <label>Hours</label>
+            </div>
+            <div class="time-unit">
+                <span id="minutes">00</span>
+                <label>Mins</label>
+            </div>
+            <div class="time-unit">
+                <span id="seconds">00</span>
+                <label>Secs</label>
+            </div>
+        </div>
+        <p id="next-event-name" class="highlight-event"></p>
+    </div>
+</section>

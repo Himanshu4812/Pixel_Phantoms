@@ -60,3 +60,89 @@
 .btn-event:hover {
     background: #0088cc;
 }
+/* COUNTDOWN SECTION */
+.countdown-hidden {
+    display: none;
+}
+
+#countdown-section {
+    margin-top: 40px;
+    padding: 30px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+    display: inline-block;
+    animation: fadeIn 1s ease-out;
+}
+
+#countdown-section h3 {
+    margin: 0 0 20px 0;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+#countdown-timer {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.time-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.time-unit span {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--accent-color);
+    line-height: 1;
+    text-shadow: 0 0 20px rgba(0, 170, 255, 0.4);
+    font-variant-numeric: tabular-nums;
+}
+
+.time-unit label {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+/* Add colons between units on desktop */
+.time-unit:not(:last-child)::after {
+    content: ':';
+    position: absolute;
+    right: -20px;
+    top: 5px;
+    font-size: 2rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+.highlight-event {
+    color: var(--text-primary);
+    font-size: 1.2rem;
+    margin: 0;
+    font-weight: bold;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    #countdown-timer {
+        gap: 15px;
+    }
+    
+    .time-unit span {
+        font-size: 2rem;
+    }
+    
+    .time-unit:not(:last-child)::after {
+        display: none;
+    }
+}
