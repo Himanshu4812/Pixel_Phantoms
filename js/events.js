@@ -3,6 +3,7 @@ const LOCAL_JSON_PATH = "data/events.json";
 
 let allEvents = [];
 const EVENTS_PER_PAGE = 6; 
+let countdownInterval = null; 
 
 document.addEventListener('DOMContentLoaded', () => {
     loadEvents();
@@ -37,19 +38,16 @@ async function loadEvents() {
             if (apiRes.ok) {
                 const apiData = await apiRes.json();
                 
-                // Validate if API returned an Array (Not an error object)
                 if (Array.isArray(apiData)) {
                     // Filter: Only Approved
                     const validApiEvents = apiData.filter(e => 
                         e.status && e.status.toString().toLowerCase().trim() === "approved"
                     );
                     
-                    // Merge strategies: Add API events to the list
                     mergedEvents = [...mergedEvents, ...validApiEvents];
                     console.log(`✅ Google Sheet: Added ${validApiEvents.length} events`);
                 } else {
                     console.error("Google Sheet API Error:", apiData);
-                    // Usually implies 'Sheet not found' - Check your App Script tab name
                 }
             }
         }
@@ -57,10 +55,10 @@ async function loadEvents() {
         console.warn("⚠️ Google Sheet API unreachable (using local only)");
     }
 
-    // STEP C: Deduplicate (Optional, based on Title) & Sort
-    // We use a Map to keep unique titles, preferring the API version if duplicates exist (by reversing first)
+    // STEP C: Deduplicate & Sort
     const uniqueMap = new Map();
-    mergedEvents.forEach(e => uniqueMap.set(e.title.trim(), e));
+    // Use `event.title.trim().toLowerCase()` for case-insensitive deduplication
+    mergedEvents.forEach(e => uniqueMap.set(e.title.trim().toLowerCase(), e));
     allEvents = Array.from(uniqueMap.values());
 
     // Sort: Nearest date first
@@ -90,6 +88,8 @@ function renderPage(page) {
     const now = new Date();
     const nextEvent = allEvents.find(e => {
         const d = new Date(e.date);
+        if (isNaN(d.getTime())) return false; 
+        
         d.setHours(23, 59, 59); // Consider event active until end of day
         return d > now;
     });
@@ -99,7 +99,7 @@ function renderPage(page) {
         card.classList.add("event-card");
         
         // Highlight logic
-        if (nextEvent && event === nextEvent) {
+        if (nextEvent && event.title === nextEvent.title) {
             card.style.borderColor = "var(--accent-color)";
             card.style.boxShadow = "0 0 15px rgba(0, 170, 255, 0.15)";
         }
@@ -107,11 +107,11 @@ function renderPage(page) {
         let dateStr = event.date;
         try {
             const d = new Date(event.date);
-            if(!isNaN(d)) dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
+            if(!isNaN(d.getTime())) dateStr = d.toLocaleDateString('en-US', { weekday: 'short', month: 'long', day: 'numeric', year: 'numeric' });
         } catch(e){}
 
         card.innerHTML = `
-            ${(nextEvent && event === nextEvent) ? '<div style="color:var(--accent-color); font-weight:bold; font-size:0.8rem; margin-bottom:8px; text-transform:uppercase;">🔥 Featured</div>' : ''}
+            ${(nextEvent && event.title === nextEvent.title) ? '<div style="color:var(--accent-color); font-weight:bold; font-size:0.8rem; margin-bottom:8px; text-transform:uppercase;">🔥 Featured</div>' : ''}
             <h2>${event.title}</h2>
             <p class="event-date"><i class="fas fa-calendar-alt"></i> ${dateStr}</p>
             <p class="event-location"><i class="fas fa-map-marker-alt"></i> ${event.location || 'TBD'}</p>
@@ -155,11 +155,21 @@ window.changePage = function(newPage) {
 function setupCountdown(events) {
     const now = new Date();
     
+    // Clear any existing timer to prevent duplicates
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+
     // Filter to find the current active or next upcoming event
-    // Logic: Event End Time (23:59:59 of date) must be in the future
     const activeOrUpcoming = events.find(e => {
         const eventEnd = new Date(e.date);
-        eventEnd.setHours(23, 59, 59, 999); 
+        if (isNaN(eventEnd.getTime())) return false;
+
+        // Set end time to midnight of the NEXT day to ensure a full 24-hour live window
+        eventEnd.setDate(eventEnd.getDate() + 1); 
+        eventEnd.setHours(0, 0, 0, 0); 
+
         return eventEnd > now;
     });
 
@@ -174,51 +184,52 @@ function setupCountdown(events) {
 
 function initCountdownTimer(event) {
     const section = document.getElementById('countdown-section');
-    const nameEl = document.getElementById('next-event-name');
-    if(!section || !nameEl) return;
+    if(!section) return;
 
     section.classList.remove('countdown-hidden');
     
-    // Initial Render
     renderStandardTimer(event);
 
-    const targetDate = new Date(event.date).getTime();
-    let timerInterval;
+    const targetDate = new Date(event.date).getTime(); 
+    const oneDay = 24 * 60 * 60 * 1000;
+    const liveEndWindow = targetDate + oneDay;
 
     const updateTimer = () => {
         const now = new Date().getTime();
         const distance = targetDate - now;
 
-        // --- LIVE STATE HANDLING ---
-        if (distance < 0) {
-            // Check if within 24h Live Window
-            const oneDay = 24 * 60 * 60 * 1000;
+        // --- LIVE STATE HANDLING (Event started, but less than 24 hours ago) ---
+        if (distance < 0 && now < liveEndWindow) {
             
-            if (Math.abs(distance) < oneDay) {
-                // RENDER LIVE UI
-                section.innerHTML = `
-                    <div style="text-align:center; padding:10px; animation: fadeIn 0.5s;">
-                        <h2 style="color:#ff0055; margin-bottom:10px; font-size:2rem; text-shadow:0 0 15px rgba(255,0,85,0.4);">
-                            <i class="fas fa-satellite-dish"></i> LIVE NOW
-                        </h2>
-                        <h3 style="margin-bottom:10px;">${event.title}</h3>
-                        <p style="color:var(--text-secondary);">Stream is currently active.</p>
-                        <a href="${event.link}" target="_blank" class="btn-event" style="background:#ff0055; border-color:#ff0055; color:white; margin-top:15px; display:inline-block;">
-                            Join Event
-                        </a>
-                    </div>
-                `;
-            } else {
-                section.innerHTML = `<h3>${event.title} has ended.</h3>`;
-            }
-            
-            clearInterval(timerInterval);
+            // RENDER LIVE UI
+            section.innerHTML = `
+                <div style="text-align:center; padding:10px; animation: fadeIn 0.5s;">
+                    <h2 style="color:#ff0055; margin-bottom:10px; font-size:2rem; text-shadow:0 0 15px rgba(255,0,85,0.4);">
+                        <i class="fas fa-satellite-dish"></i> LIVE NOW
+                    </h2>
+                    <h3 style="margin-bottom:10px;">${event.title}</h3>
+                    <p style="color:var(--text-secondary);">Stream is currently active. Join us!</p>
+                    <a href="${event.link}" target="_blank" class="btn-event" style="background:#ff0055; border-color:#ff0055; color:white; margin-top:15px; display:inline-block;">
+                        Join Event
+                    </a>
+                </div>
+            `;
+            return;
+        } 
+        
+        // --- ENDED STATE HANDLING ---
+        if (distance < 0 && now >= liveEndWindow) {
+            section.innerHTML = `<h3>${event.title} has ended.</h3>`;
+            clearInterval(countdownInterval);
+            countdownInterval = null;
             return;
         }
 
         // --- STANDARD COUNTDOWN ---
         const dEl = document.getElementById("days");
-        if (!dEl) { renderStandardTimer(event); return; } // Restore if needed
+        if (!dEl) { 
+             renderStandardTimer(event); 
+        } 
 
         const days = Math.floor(distance / (1000 * 60 * 60 * 24));
         const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -231,22 +242,24 @@ function initCountdownTimer(event) {
         document.getElementById("seconds").innerText = String(seconds).padStart(2, '0');
     };
 
-    timerInterval = setInterval(updateTimer, 1000);
+    countdownInterval = setInterval(updateTimer, 1000);
     updateTimer(); 
 }
 
 function renderStandardTimer(event) {
     const section = document.getElementById('countdown-section');
-    section.innerHTML = `
-        <h3>Next Big Event Starts In:</h3>
-        <div id="countdown-timer">
-            <div class="time-unit"><span id="days">00</span><label>Days</label></div>
-            <div class="time-unit"><span id="hours">00</span><label>Hours</label></div>
-            <div class="time-unit"><span id="minutes">00</span><label>Mins</label></div>
-            <div class="time-unit"><span id="seconds">00</span><label>Secs</label></div>
-        </div>
-        <p id="next-event-name" class="highlight-event">Counting down to: <span style="color:var(--accent-color)">${event.title}</span></p>
-    `;
+    if (section) {
+        section.innerHTML = `
+            <h3>Next Big Event Starts In:</h3>
+            <div id="countdown-timer">
+                <div class="time-unit"><span id="days">00</span><label>Days</label></div>
+                <div class="time-unit"><span id="hours">00</span><label>Hours</label></div>
+                <div class="time-unit"><span id="minutes">00</span><label>Mins</label></div>
+                <div class="time-unit"><span id="seconds">00</span><label>Secs</label></div>
+            </div>
+            <p id="next-event-name" class="highlight-event">Counting down to: <span style="color:var(--accent-color)">${event.title}</span></p>
+        `;
+    }
 }
 
 // 3. ORGANIZE FORM LOGIC
