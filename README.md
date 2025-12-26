@@ -206,7 +206,9 @@ We welcome **all contributions** — design updates, animations, UI fixes, new p
 
 # 🛠 Tech Stack
 
-**Frontend:**  HTML5 / CSS3 / JavaScript
+**Frontend:** <img width='20px' src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/html5/html5-original.svg" /> HTML5 / 
+            <img width='20px' src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/css3/css3-original.svg" /> CSS3 / 
+            <img width='20px' src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" />JavaScript
 
 **Optional Add-ons:** Bootstrap / AOS Animations / jQuery / API Integrations
 
