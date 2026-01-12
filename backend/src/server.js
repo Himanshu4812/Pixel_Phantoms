@@ -149,9 +149,20 @@ app.use(errorHandler);
 
 // Start server
 if (require.main === module) {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
     console.log(`Health check available at: http://localhost:${PORT}/health`);
+  });
+
+  server.on('error', (error) => {
+    if (error.code === 'EADDRINUSE') {
+      console.error(`Failed to start server: Port ${PORT} is already in use.`);
+    } else if (error.code === 'EACCES') {
+      console.error(`Failed to start server: Insufficient privileges to bind to port ${PORT}.`);
+    } else {
+      console.error('Failed to start server due to an unexpected error:', error);
+    }
+    process.exit(1);
   });
 }
 
