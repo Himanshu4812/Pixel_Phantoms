@@ -182,8 +182,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewCount = ViewCounter.getViewCount(eventId);
         const formattedViews = ViewCounter.formatViewCount(viewCount);
 
-        const card = document.createElement('article');
-        card.className = `event-card ${statusClass}`;
+        // Generate unique, stable event ID based on event data
+        const eventIdBase = `${event.title || 'Untitled Event'}|${event.date}`;
+        const eventId = `event-${encodeURIComponent(eventIdBase)}`;
         card.setAttribute('tabindex', '0');
         card.setAttribute('data-event-id', eventId);
 
