@@ -10,6 +10,7 @@
     <!-- <link rel="stylesheet" href="css/scroll-buttons.css" /> -->
     <link rel="stylesheet" href="css/style.min.css" />
     <link rel="stylesheet" href="css/back-to-top.css" />
+    <link rel="stylesheet" href="css/animations.css" />
     <link rel="stylesheet" href="css/share-button.css" />
     <link rel="stylesheet" href="css/home-gsap.min.css" />
     <link rel="stylesheet" href="css/cursor-effect.css" />
@@ -58,6 +59,7 @@
     <div id="navbar-placeholder"></div>
 
     <main id="main-content" tabindex="-1">
+      <div class="page-transition-wrapper" data-page="home">
       <section class="hero-section" id="hero">
         <div class="grid-overlay" aria-hidden="true"></div>
         <div class="hero-content">
@@ -581,6 +583,7 @@
           </div>
         </div>
       </section>
+    </div>
     </main>
 
     <div id="footer-placeholder"></div>
@@ -813,6 +816,7 @@
       });
     </script>
 
+    <script src="js/page-transitions.js" defer></script>
     <script>
       const currentPage = location.pathname.split('/').pop();
 
